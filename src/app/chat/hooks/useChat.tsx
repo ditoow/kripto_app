@@ -14,6 +14,21 @@ import { supabase } from "../../../lib/supabase/client";
 import { useAuth } from "../../../context/AuthContext";
 import CryptoJS from "crypto-js";
 
+// Helper: Hapus header dari public key untuk penyimpanan database
+const stripPublicKeyHeaders = (key: string): string => {
+  return key
+    .replace(/-----BEGIN PUBLIC KEY-----/g, "")
+    .replace(/-----END PUBLIC KEY-----/g, "")
+    .replace(/\n/g, "")
+    .trim();
+};
+
+// Helper: Tambahkan header ke public key untuk proses verifikasi
+const restorePublicKeyHeaders = (key: string): string => {
+  if (key.includes("-----BEGIN PUBLIC KEY-----")) return key;
+  return `-----BEGIN PUBLIC KEY-----\n${key}\n-----END PUBLIC KEY-----`;
+};
+
 export interface Message {
   id: string;
   sender: string;
@@ -175,8 +190,11 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             // Only decrypt/verify messages from others
             if (!isOwnMessage) {
               try {
-                // Use sender's public key from database for verification
-                const senderPublicKey = msg.sender_public_key || keys.publicKey;
+                // Use sender's public key from database for verification (restore headers)
+                const rawKey =
+                  msg.sender_public_key ||
+                  stripPublicKeyHeaders(keys.publicKey);
+                const senderPublicKey = restorePublicKeyHeaders(rawKey);
                 const result = hybrid.secureReceive(
                   msg.content_encrypted,
                   msg.signature,
@@ -313,16 +331,19 @@ export function ChatProvider({ children }: { children: ReactNode }) {
                 publicKeyPreview: msg.sender_public_key?.substring(0, 50),
               });
 
-              // Use sender's public key from the message for verification
-              const senderKey = msg.sender_public_key;
-              if (!senderKey) {
+              // Use sender's public key from the message for verification (restore headers)
+              const rawKey = msg.sender_public_key;
+              if (!rawKey) {
                 console.warn("[Realtime] No sender_public_key in message!");
               }
 
+              const senderKey = restorePublicKeyHeaders(
+                rawKey || stripPublicKeyHeaders(keys.publicKey),
+              );
               const result = hybrid.secureReceive(
                 msg.content_encrypted,
                 msg.signature,
-                senderKey || keys.publicKey, // Fallback to own key if missing
+                senderKey, // Key with restored headers for verification
               );
               decryptedText = result.plaintext;
               isVerified = result.isVerified;
@@ -397,7 +418,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         content_encrypted: securePacket.finalCipher,
         content_hash: securePacket.hash,
         signature: securePacket.signature,
-        sender_public_key: keys.publicKey,
+        sender_public_key: stripPublicKeyHeaders(keys.publicKey), // Simpan tanpa header
       });
 
       if (error) {

@@ -2,11 +2,11 @@ import JSEncrypt from "jsencrypt";
 import CryptoJS from "crypto-js";
 
 /**
- * RSA Digital Signature Module
- * Uses MD5 for hashing and RSA for signing
+ * Modul Tanda Tangan Digital RSA
+ * Menggunakan MD5 untuk hashing dan RSA untuk penandatanganan
  */
 
-// Helper function to convert CryptoJS hasher to string output
+// Fungsi helper untuk mengkonversi CryptoJS hasher ke output string
 const sha256Hasher = (str: string): string => {
   return CryptoJS.SHA256(str).toString();
 };
@@ -18,7 +18,7 @@ export class RSAService {
     this.rsa = new JSEncrypt({ default_key_size: "1024" });
   }
 
-  // Generate new keypair (for demo purposes, usually done once)
+  // Buat keypair baru (untuk demo, biasanya hanya dilakukan sekali)
   public generateKeys(): { publicKey: string; privateKey: string } {
     this.rsa.getKey();
     return {
@@ -27,12 +27,12 @@ export class RSAService {
     };
   }
 
-  // 1. Hash Message (MD5)
+  // 1. Hash Pesan (MD5)
   public hashMessage(message: string): string {
     return CryptoJS.MD5(message).toString();
   }
 
-  // 2. Sign Hash (with Private Key)
+  // 2. Tanda Tangani Hash (dengan Private Key)
   public sign(
     message: string,
     privateKey: string,
@@ -40,7 +40,7 @@ export class RSAService {
     this.rsa.setPrivateKey(privateKey);
     const hash = this.hashMessage(message);
 
-    // RSA sign the hash using SHA256
+    // Tanda tangani hash menggunakan RSA dengan SHA256
     const signature = this.rsa.sign(hash, sha256Hasher, "sha256");
 
     return {
@@ -49,18 +49,18 @@ export class RSAService {
     };
   }
 
-  // 3. Verify Signature (with Public Key)
+  // 3. Verifikasi Tanda Tangan (dengan Public Key)
   public verify(
     message: string,
     signature: string,
     publicKey: string,
   ): boolean {
-    // Create new instance to avoid stale state
+    // Buat instance baru untuk menghindari state lama
     const verifier = new JSEncrypt();
     verifier.setPublicKey(publicKey);
     const hash = this.hashMessage(message);
 
-    // RSA verify: compare decrypted signature with recalculated hash
+    // Verifikasi RSA: bandingkan tanda tangan yang didekripsi dengan hash yang dihitung ulang
     try {
       return verifier.verify(hash, signature, sha256Hasher);
     } catch (e) {

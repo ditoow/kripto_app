@@ -1,6 +1,6 @@
 /**
- * Playfair Cipher Implementation
- * Classic block cipher using 5x5 matrix
+ * Implementasi Playfair Cipher
+ * Cipher blok klasik menggunakan matriks 5x5
  */
 
 export class PlayfairCipher {
@@ -11,20 +11,20 @@ export class PlayfairCipher {
   }
 
   private generateKeyMatrix() {
-    // 1. Prepare alphabet (J merged with I usually, but here we omit J or merge it)
-    // Standard Playfair: 25 letters, I/J merged.
-    // We'll use: A-Z minus J. If J appears, treat as I.
-    const alphabet = "ABCDEFGHIKLMNOPQRSTUVWXYZ"; // No J
+    // 1. Siapkan alfabet (J biasanya digabung dengan I, di sini kita hilangkan J atau gabungkan)
+    // Playfair standar: 25 huruf, I/J digabung.
+    // Kita gunakan: A-Z tanpa J. Jika ada J, perlakukan sebagai I.
+    const alphabet = "ABCDEFGHIKLMNOPQRSTUVWXYZ"; // Tanpa J
     const sanitizedKey = this.keyword
       .toUpperCase()
       .replace(/J/g, "I")
       .replace(/[^A-Z]/g, "");
 
-    // 2. Create unique string from key + alphabet
+    // 2. Buat string unik dari key + alfabet
     let uniqueChars = "";
     const seen = new Set<string>();
 
-    // Add key chars
+    // Tambahkan karakter dari key
     for (const char of sanitizedKey) {
       if (!seen.has(char)) {
         uniqueChars += char;
@@ -32,7 +32,7 @@ export class PlayfairCipher {
       }
     }
 
-    // Add remaining alphabet
+    // Tambahkan sisa alfabet
     for (const char of alphabet) {
       if (!seen.has(char)) {
         uniqueChars += char;
@@ -40,14 +40,14 @@ export class PlayfairCipher {
       }
     }
 
-    // 3. Fill 5x5 matrix
+    // 3. Isi matriks 5x5
     this.keyMatrix = [];
     for (let i = 0; i < 5; i++) {
       this.keyMatrix.push(uniqueChars.slice(i * 5, (i + 1) * 5).split(""));
     }
   }
 
-  // Find position of char in matrix
+  // Cari posisi karakter dalam matriks
   private findPosition(char: string): { row: number; col: number } | null {
     for (let r = 0; r < 5; r++) {
       for (let c = 0; c < 5; c++) {
@@ -59,7 +59,7 @@ export class PlayfairCipher {
     return null;
   }
 
-  // Helper to split text into bigrams
+  // Helper untuk memecah teks menjadi bigram (pasangan huruf)
   private prepareText(text: string): string[] {
     let clean = text
       .toUpperCase()
@@ -70,19 +70,19 @@ export class PlayfairCipher {
     let i = 0;
     while (i < clean.length) {
       let char1 = clean[i];
-      let char2 = i + 1 < clean.length ? clean[i + 1] : "X"; // Padding if odd
+      let char2 = i + 1 < clean.length ? clean[i + 1] : "X"; // Padding jika ganjil
 
       if (char1 === char2) {
-        char2 = "X"; // Insert padding if duplicate
-        i++; // Only advance 1 char from source
+        char2 = "X"; // Sisipkan padding jika huruf sama
+        i++; // Maju hanya 1 karakter dari sumber
       } else {
-        i += 2; // Advance 2 chars
+        i += 2; // Maju 2 karakter
       }
 
       bigrams.push(char1 + char2);
     }
 
-    // If last bigram was incomplete (odd length original), padded already
+    // Jika bigram terakhir tidak lengkap (panjang asli ganjil), sudah di-padding
     return bigrams;
   }
 
@@ -94,21 +94,21 @@ export class PlayfairCipher {
       const pos1 = this.findPosition(pair[0]);
       const pos2 = this.findPosition(pair[1]);
 
-      if (!pos1 || !pos2) continue; // Should not happen
+      if (!pos1 || !pos2) continue; // Seharusnya tidak terjadi
 
       let new1: string, new2: string;
 
-      // Rule 1: Same Row -> Shift Right
+      // Aturan 1: Baris Sama -> Geser ke Kanan
       if (pos1.row === pos2.row) {
         new1 = this.keyMatrix[pos1.row][(pos1.col + 1) % 5];
         new2 = this.keyMatrix[pos2.row][(pos2.col + 1) % 5];
       }
-      // Rule 2: Same Col -> Shift Down
+      // Aturan 2: Kolom Sama -> Geser ke Bawah
       else if (pos1.col === pos2.col) {
         new1 = this.keyMatrix[(pos1.row + 1) % 5][pos1.col];
         new2 = this.keyMatrix[(pos2.row + 1) % 5][pos2.col];
       }
-      // Rule 3: Rectangle -> Swap Cols
+      // Aturan 3: Persegi Panjang -> Tukar Kolom
       else {
         new1 = this.keyMatrix[pos1.row][pos2.col];
         new2 = this.keyMatrix[pos2.row][pos1.col];
@@ -121,7 +121,7 @@ export class PlayfairCipher {
   }
 
   public decrypt(ciphertext: string): string {
-    // Ciphertext should already be even length and uppercase from encrypt
+    // Ciphertext seharusnya sudah panjang genap dan huruf besar dari proses enkripsi
     const bigrams: string[] = [];
     for (let i = 0; i < ciphertext.length; i += 2) {
       bigrams.push(ciphertext.slice(i, i + 2));
@@ -137,17 +137,17 @@ export class PlayfairCipher {
 
       let new1: string, new2: string;
 
-      // Rule 1: Same Row -> Shift Left
+      // Aturan 1: Baris Sama -> Geser ke Kiri
       if (pos1.row === pos2.row) {
         new1 = this.keyMatrix[pos1.row][(pos1.col - 1 + 5) % 5];
         new2 = this.keyMatrix[pos2.row][(pos2.col - 1 + 5) % 5];
       }
-      // Rule 2: Same Col -> Shift Up
+      // Aturan 2: Kolom Sama -> Geser ke Atas
       else if (pos1.col === pos2.col) {
         new1 = this.keyMatrix[(pos1.row - 1 + 5) % 5][pos1.col];
         new2 = this.keyMatrix[(pos2.row - 1 + 5) % 5][pos2.col];
       }
-      // Rule 3: Rectangle -> Swap Cols (Same as encrypt)
+      // Aturan 3: Persegi Panjang -> Tukar Kolom (Sama seperti enkripsi)
       else {
         new1 = this.keyMatrix[pos1.row][pos2.col];
         new2 = this.keyMatrix[pos2.row][pos1.col];
@@ -156,7 +156,7 @@ export class PlayfairCipher {
       plaintext += new1 + new2;
     }
 
-    // Remove trailing X padding (added during encryption for odd-length messages)
+    // Hapus padding X di akhir (ditambahkan saat enkripsi untuk pesan dengan panjang ganjil)
     if (plaintext.endsWith("X")) {
       plaintext = plaintext.slice(0, -1);
     }
@@ -164,7 +164,7 @@ export class PlayfairCipher {
     return plaintext;
   }
 
-  // Helper for UI Debugging
+  // Helper untuk debugging UI
   public getMatrix(): string[][] {
     return this.keyMatrix;
   }

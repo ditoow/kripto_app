@@ -20,10 +20,10 @@ export class HybridCryptoSystem {
   }
 
   /**
-   * Full Secure Send Flow:
-   * 1. Integrity: Hash (MD5)
-   * 2. Auth: Sign (RSA Private Key)
-   * 3. Confidentiality: Encrypt (Playfair)
+   * Alur Lengkap Pengiriman Aman:
+   * 1. Integritas: Hash (MD5)
+   * 2. Autentikasi: Tanda tangan (RSA Private Key)
+   * 3. Kerahasiaan: Enkripsi (Playfair)
    */
   public secureSend(
     payload: string,
@@ -36,21 +36,21 @@ export class HybridCryptoSystem {
   } {
     const logs: CryptoLog[] = [];
 
-    // Step 1: Original Message
+    // Langkah 1: Pesan Asli
     logs.push({
       stage: "1. PLAINTEXT",
       output: payload,
       details: `Input message (${payload.length} characters)`,
     });
 
-    // Step 2: Playfair Key Info
+    // Langkah 2: Info Kunci Playfair
     logs.push({
       stage: "2. PLAYFAIR KEY",
       output: this.playfairKey.toUpperCase(),
       details: "Room encryption key for Playfair Cipher",
     });
 
-    // Step 3: Hashing (MD5)
+    // Langkah 3: Hashing (MD5)
     const hash = this.rsa.hashMessage(payload);
     logs.push({
       stage: "3. MD5 HASH",
@@ -58,7 +58,7 @@ export class HybridCryptoSystem {
       details: "128-bit message digest for integrity verification",
     });
 
-    // Step 4: RSA Private Key Preview
+    // Langkah 4: Preview RSA Private Key
     const privateKeyClean = privateKey
       .replace(
         /-----BEGIN RSA PRIVATE KEY-----|-----END RSA PRIVATE KEY-----/g,
@@ -73,7 +73,7 @@ export class HybridCryptoSystem {
       isEncrypted: true,
     });
 
-    // Step 5: Playfair Encryption Process (BEFORE signing!)
+    // Langkah 5: Proses Enkripsi Playfair (SEBELUM penandatanganan!)
     const cipher = this.playfair.encrypt(payload);
     logs.push({
       stage: "5. PLAYFAIR ENCRYPT",
@@ -82,7 +82,7 @@ export class HybridCryptoSystem {
       isEncrypted: true,
     });
 
-    // Step 6: Digital Signature (RSA) - Sign the CIPHERTEXT for consistency
+    // Langkah 6: Tanda Tangan Digital (RSA) - Tanda tangani CIPHERTEXT untuk konsistensi
     const { signature } = this.rsa.sign(cipher, privateKey);
     logs.push({
       stage: "6. DIGITAL SIGNATURE",
@@ -91,7 +91,7 @@ export class HybridCryptoSystem {
       isEncrypted: true,
     });
 
-    // Step 7: Final Packet Summary
+    // Langkah 7: Ringkasan Paket Akhir
     logs.push({
       stage: "7. SENT PACKET",
       output: `Cipher: ${cipher.substring(0, 20)}... | Sig: ${(signature || "").substring(0, 20)}...`,
@@ -108,17 +108,17 @@ export class HybridCryptoSystem {
   }
 
   /**
-   * Simple decrypt without verification (for own messages)
+   * Dekripsi sederhana tanpa verifikasi (untuk pesan sendiri)
    */
   public decryptOnly(cipher: string): string {
     return this.playfair.decrypt(cipher);
   }
 
   /**
-   * Full Secure Receive Flow:
-   * 1. Confidentiality: Decrypt (Playfair)
-   * 2. IntegrityCheck: Hash Decrypted Payload
-   * 3. AuthCheck: Verify Signature (RSA Public Key)
+   * Alur Lengkap Penerimaan Aman:
+   * 1. Kerahasiaan: Dekripsi (Playfair)
+   * 2. Cek Integritas: Hash Payload yang Didekripsi
+   * 3. Cek Autentikasi: Verifikasi Tanda Tangan (RSA Public Key)
    */
   public secureReceive(
     cipher: string,
@@ -131,7 +131,7 @@ export class HybridCryptoSystem {
   } {
     const logs: CryptoLog[] = [];
 
-    // Step 1: Received Ciphertext
+    // Langkah 1: Ciphertext yang Diterima
     logs.push({
       stage: "1. RECEIVED CIPHER",
       output: cipher,
@@ -139,14 +139,14 @@ export class HybridCryptoSystem {
       isEncrypted: true,
     });
 
-    // Step 2: Playfair Key Info
+    // Langkah 2: Info Kunci Playfair
     logs.push({
       stage: "2. PLAYFAIR KEY",
       output: this.playfairKey.toUpperCase(),
       details: "Room decryption key",
     });
 
-    // Step 3: Decryption (Playfair)
+    // Langkah 3: Dekripsi (Playfair)
     const plaintext = this.playfair.decrypt(cipher);
     logs.push({
       stage: "3. PLAYFAIR DECRYPT",
@@ -154,7 +154,7 @@ export class HybridCryptoSystem {
       details: "Reversed digraph substitution",
     });
 
-    // Step 4: Recalculate Hash
+    // Langkah 4: Hitung Ulang Hash
     const recalculatedHash = this.rsa.hashMessage(plaintext);
     logs.push({
       stage: "4. RECALC MD5 HASH",
@@ -162,7 +162,7 @@ export class HybridCryptoSystem {
       details: "Hash of decrypted message for comparison",
     });
 
-    // Step 5: Signature Preview
+    // Langkah 5: Preview Tanda Tangan
     logs.push({
       stage: "5. RECEIVED SIGNATURE",
       output: signature ? signature.substring(0, 64) + "..." : "No signature",
@@ -170,7 +170,7 @@ export class HybridCryptoSystem {
       isEncrypted: true,
     });
 
-    // Step 6: SENDER PUBLIC KEY Preview
+    // Langkah 6: Preview PUBLIC KEY PENGIRIM
     const publicKeyClean = publicKey
       .replace(/-----BEGIN PUBLIC KEY-----|-----END PUBLIC KEY-----/g, "")
       .replace(/\n/g, "")
@@ -181,7 +181,7 @@ export class HybridCryptoSystem {
       details: "Used to verify sender identity",
     });
 
-    // Step 7: Verification Result - Verify the CIPHERTEXT (what was signed)
+    // Langkah 7: Hasil Verifikasi - Verifikasi CIPHERTEXT (yang ditandatangani)
     const isVerified = this.rsa.verify(cipher, signature, publicKey);
     logs.push({
       stage: "7. VERIFICATION RESULT",
